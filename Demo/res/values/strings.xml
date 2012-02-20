@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Samsung Demo</string>
+    <string name="choose_image">Choose image</string>
+    <string name="filename">&lt;filename></string>
+    <string name="parallel">Parallel (threaded) mode</string>
+    <string name="sequential">Sequential mode</string>
+    <string name="start">Show animation screen</string>
+    <string name="select">Select Picture</string>
+    <string name="decay">Rate of decay:</string>
+    <string name="radius">Wave radius:</string>
+    <string name="height">Wave height</string>
+</resources>
