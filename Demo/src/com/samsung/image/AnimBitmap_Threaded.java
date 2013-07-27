@@ -8,7 +8,6 @@ import android.view.SurfaceHolder;
 
 public class AnimBitmap_Threaded extends Thread {
 
-	private boolean mRun = false; // Indicate whether the surface has been created & is ready to draw
 	private SurfaceHolder mSurfaceHolder;
 	private Core handle;
 	private long timePrevFrame;
@@ -20,10 +19,12 @@ public class AnimBitmap_Threaded extends Thread {
 
 	@Override
 	public void run() {
-		while (mRun) {
+		while (true) {
 			Canvas canvas = null;
 			
             //limit the frame rate to maximum 60 frames per second (16 milliseconds)
+            // note: Samsung Galaxy S2, S3 etc. have a Power Saving setting which is "on" by default.
+            //      In this mode, the FPS is limited to 30 on all apps.
 			synchronized (mSurfaceHolder) {
 				long timeNow = System.currentTimeMillis();
 				long timeDelta = timeNow - timePrevFrame;
@@ -36,7 +37,8 @@ public class AnimBitmap_Threaded extends Thread {
             
 			try {
 				canvas = mSurfaceHolder.lockCanvas();
-				synchronized (mSurfaceHolder) {
+				if (canvas != null)
+                synchronized (mSurfaceHolder) {
 					canvas.drawColor(Color.BLACK); // clear the canvas (instead of drawing over the last frame)
 					canvas.save();
 			    	Bitmap bm = handle.getBitmap();
@@ -46,7 +48,7 @@ public class AnimBitmap_Threaded extends Thread {
 					canvas.restore();
 					handle.newframe();                
 				}
-			} finally {
+			} catch (Exception e) {} finally {
 				if (canvas != null) 
 					mSurfaceHolder.unlockCanvasAndPost(canvas);
 			}
@@ -70,9 +72,5 @@ public class AnimBitmap_Threaded extends Thread {
 				handle.disturb(x, y);
 			}
 	    }
-	}
-
-	public void setRunning(boolean b) {
-		mRun = b;
 	}
 }

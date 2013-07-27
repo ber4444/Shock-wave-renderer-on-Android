@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
+import android.content.res.Configuration;
 
 public class ImgActivity extends Activity {
 	
@@ -16,7 +17,6 @@ public class ImgActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         String path = getIntent().getStringExtra("path");
-        boolean threaded = getIntent().getBooleanExtra("threaded", true);
         CharSequence tmp = getIntent().getCharSequenceExtra("decay");
         try {
         	RATE_OF_DECAY =  (tmp == null) ? 5 : Integer.parseInt(tmp.toString());
@@ -42,7 +42,7 @@ public class ImgActivity extends Activity {
         setContentView(R.layout.imgview);
         RelativeLayout v1 = (RelativeLayout) findViewById(R.id.LinearLayout01);
         
-        View widget = (threaded) ? new FieldView_Threaded(this, path) : new FieldView(this, path);
+        View widget = new FieldView_Threaded(this, path);
 
 		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
@@ -52,5 +52,12 @@ public class ImgActivity extends Activity {
         
 		v1.addView(widget);
 
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        // rotation of the image is automatic, animations continue to work as started
+        // although some devices (e.g. Galaxy S2) get confused when multitasking from landscape to portrait apps
+        super.onConfigurationChanged(newConfig);
     }
 }

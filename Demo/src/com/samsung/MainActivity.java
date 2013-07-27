@@ -44,7 +44,6 @@ public class MainActivity extends Activity {
 					return;
 				Intent intent = new Intent(context, ImgActivity.class);
 				intent.putExtra("path", selectedImagePath); 
-				intent.putExtra("threaded", ((RadioButton) findViewById(R.id.radio0)).isChecked());
 				intent.putExtra("decay", ((TextView) findViewById(R.id.editText1)).getText());
 				intent.putExtra("radius", ((TextView) findViewById(R.id.editText2)).getText());
 				intent.putExtra("height", ((TextView) findViewById(R.id.editText3)).getText());
@@ -56,7 +55,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putString("path", selectedImagePath);
-        outState.putBoolean("threaded", ((RadioButton) findViewById(R.id.radio0)).isChecked());
         // etc. -- the same for input fields
         super.onSaveInstanceState(outState);
     }
@@ -65,10 +63,6 @@ public class MainActivity extends Activity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
     	selectedImagePath = savedInstanceState.getString("path");
     	((TextView) findViewById(R.id.textView1)).setText(selectedImagePath);
-    	((RadioButton) findViewById(R.id.radio0)).setChecked(
-    			savedInstanceState.getBoolean("threaded"));
-    	((RadioButton) findViewById(R.id.radio1)).setChecked(
-    			! savedInstanceState.getBoolean("threaded"));
         super.onRestoreInstanceState(savedInstanceState);
     }
 

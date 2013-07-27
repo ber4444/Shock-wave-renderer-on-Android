@@ -55,25 +55,13 @@ public class FieldView_Threaded extends SurfaceView implements SurfaceHolder.Cal
 	public void surfaceCreated(SurfaceHolder holder) {
 		// start the thread here so that we don't busy-wait in run()
 		// waiting for the surface to be created
-        if (thread != null) {
-        	thread.setRunning(true);
+        if (thread != null && !thread.isAlive())
         	thread.start();
-        }
 	}
 
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		// we have to tell thread to shut down & wait for it to finish, or else
-		// it might touch the Surface after we return and explode
-		boolean retry = true;
-		thread.setRunning(false);
-		while (retry) {
-			try {
-				thread.join();
-				retry = false;
-			} catch (InterruptedException e) {
-			}
-		}
-	}
+        thread.interrupt();
+    }
 	
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
