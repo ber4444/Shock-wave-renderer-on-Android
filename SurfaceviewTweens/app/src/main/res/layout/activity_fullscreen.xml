@@ -3,9 +3,7 @@
     android:layout_height="match_parent" android:background="#0099cc"
     tools:context=".FullscreenActivity">
 
-    <!-- The primary full-screen view. This can be replaced with whatever view
-         is needed to present your content, e.g. VideoView, SurfaceView,
-         TextureView, etc. -->
+    <!-- The primary full-screen view. -->
     <gabor.com.surfaceviewtweens.looper.LoopSurfaceView android:id="@+id/fullscreen_content" android:layout_width="match_parent"
         android:layout_height="match_parent" android:keepScreenOn="true" android:gravity="center"/>
 
@@ -20,9 +18,9 @@
             android:background="@color/black_overlay" android:orientation="horizontal"
             tools:ignore="UselessParent">
 
-            <Button android:id="@+id/dummy_button" style="?metaButtonBarButtonStyle"
+            <Button android:id="@+id/restart_button" style="?metaButtonBarButtonStyle"
                 android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:text="@string/dummy_button" />
+                android:layout_weight="1" android:text="@string/restart_button" />
 
         </LinearLayout>
     </FrameLayout>

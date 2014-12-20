@@ -1,5 +1,7 @@
 package gabor.com.surfaceviewtweens;
 
+import gabor.com.surfaceviewtweens.looper.LoopAdapterImpl;
+import gabor.com.surfaceviewtweens.looper.LoopSurfaceView;
 import gabor.com.surfaceviewtweens.util.SystemUiHider;
 
 import android.annotation.TargetApi;
@@ -7,6 +9,7 @@ import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -46,14 +49,19 @@ public class FullscreenActivity extends Activity {
      */
     private SystemUiHider mSystemUiHider;
 
+    private LoopSurfaceView contentView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_fullscreen);
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
 
         final View controlsView = findViewById(R.id.fullscreen_content_controls);
-        final View contentView = findViewById(R.id.fullscreen_content);
+        contentView = (LoopSurfaceView)findViewById(R.id.fullscreen_content);
+        contentView.setAdapter(new LoopAdapterImpl(dm.widthPixels, dm.heightPixels));
 
         // Set up an instance of SystemUiHider to control the system UI for
         // this activity.
@@ -112,7 +120,13 @@ public class FullscreenActivity extends Activity {
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
-        findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
+        findViewById(R.id.restart_button).setOnTouchListener(mDelayHideTouchListener);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        contentView.stop();
     }
 
     @Override

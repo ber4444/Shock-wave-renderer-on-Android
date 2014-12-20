@@ -1,15 +1,16 @@
 package gabor.com.surfaceviewtweens.looper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Canvas;
 
 public interface LoopAdapter {
 
-    void update(long elapsedTime);
+    public void update(long elapsedTime);
     
-    List<DrawableObject> getDrawableObjects();
+    public ArrayList<DrawableObject> getDrawableObjects();
     
-    void drawBackground(Canvas canvas);
+    public void drawBackground(Canvas canvas);
 
 }

@@ -6,17 +6,10 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-/**
- * LoopSurfaceView is a final SurfaceView. You put it in your layout and use the
- * setAdapter(LoopSurfaceViewAdapter) method to override methods that is your
- * concern, like draw().
- * 
- * @author JoanZap
- * 
- */
-public final class LoopSurfaceView extends SurfaceView {
+public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
     private static final String TAG = LoopSurfaceView.class.getSimpleName();
 
@@ -24,16 +17,23 @@ public final class LoopSurfaceView extends SurfaceView {
 
     private LoopAdapter adapter;
 
+    public boolean surfaceCreated = false;
+
     public LoopSurfaceView(Context context) {
         super(context);
+        getHolder().addCallback(this);
     }
 
     public LoopSurfaceView(Context context, AttributeSet attrs) {
+
         super(context, attrs);
+        getHolder().addCallback(this);
+
     }
 
     public LoopSurfaceView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        getHolder().addCallback(this);
     }
 
     @Override
@@ -53,15 +53,13 @@ public final class LoopSurfaceView extends SurfaceView {
             throw new IllegalStateException("You can't call play() twice.");
         }
 
-        // Start the inner thread
         innerThread = new InnerThread();
         innerThread.start();
 
     }
 
-    /** Pause the loop. You can start it again with play(). */
-    public void pause() {
-        // Stop the inner thread
+    /** Stop the loop. You can start it again with play(). */
+    public void stop() {
         innerThread.cleanStop();
         innerThread = null;
     }
@@ -69,6 +67,21 @@ public final class LoopSurfaceView extends SurfaceView {
     /** Set the adapter for this surface view. */
     public void setAdapter(LoopAdapter adapter) {
         this.adapter = adapter;
+    }
+
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    }
+
+    public void surfaceCreated(SurfaceHolder holder) {
+        if (!surfaceCreated) {
+            play();
+            surfaceCreated = true;
+        }
+    }
+
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        stop();
+        surfaceCreated = false;
     }
 
     private class InnerThread extends Thread {
@@ -83,12 +96,12 @@ public final class LoopSurfaceView extends SurfaceView {
 
                 try {
                     canvas = getHolder().lockCanvas();
-                    if (canvas != null) {
+                    if (canvas != null) { // don't we need synchronized (getHolder()) here ?
                         adapter.update(0);
                         adapter.drawBackground(canvas);
                         renderObjects(adapter.getDrawableObjects(), canvas);
                     }
-                    Thread.sleep(500);
+                    Thread.sleep(500);//or 10
                 } catch (InterruptedException e) {
                     Log.e(TAG, "Interrupted while sleeping.", e);
 

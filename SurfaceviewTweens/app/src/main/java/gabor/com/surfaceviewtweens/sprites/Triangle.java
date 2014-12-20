@@ -1,7 +1,13 @@
 package gabor.com.surfaceviewtweens.sprites;
 
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.Rect;
+
+import gabor.com.surfaceviewtweens.looper.DrawableObject;
 
 /*
      p0 +----/ p1
@@ -12,18 +18,17 @@ import android.graphics.Point;
     A triangle is rendered clockwise from p0.
     It represents the minimum unit of the Grid system.
 */
-public class Triangle
-{
-    // Triangle is a native Shape object in the original code and these are its native properties
-    // we access them directly and not via getter methods -- for speed:
+public class Triangle implements DrawableObject {
     public int x;
-    public int y;
-    public float alpha; //Valid values are 0 (fully transparent) to 1 (fully opaque).
-    // ------- end if native properties
-
+    public int y; // x and y should change during the course of the animation - TODO
+    private Paint paint = new Paint() {{
+        setColor(Color.WHITE);
+        setAntiAlias(true);
+        setStyle(Paint.Style.FILL_AND_STROKE);
+    }};
     private final int _type;
     private final int _size;
-    private float _opacity;   // confusingly, this is a different property than alpha
+    private float _opacity;   //Valid values are 0 (fully transparent) to 1 (fully opaque).
     private Point _p0 = new Point(0,0);
     private Point _p1 = new Point(0,0);
     private Point _p2 = new Point(0,0);
@@ -34,13 +39,12 @@ public class Triangle
     {
         _type = type;
         _size = size;
-        // note that x,y are initial values, they will be changed with the tween animation (via TriangleAccessor)
         x = X;
         y = Y;
         createPath();
     }
 
-    public void createPath()
+    private void createPath()
     {
         _p0.x = x; _p0.y = y;
         if (_type == 0)
@@ -79,10 +83,16 @@ public class Triangle
         path.close();
     }
 
-    public Path getPath() {
+    private Path getPath() {
         if (path == null)
             createPath();
         return path;
+    }
+
+    public void draw(Canvas canvas) {
+        int a = (int)(255.0f * _opacity);
+        paint.setAlpha(a);
+        canvas.drawPath(getPath(), paint);
     }
 
     public Point getCenter()
@@ -100,9 +110,5 @@ public class Triangle
         return _type;
     }
 
-    public void setOpacity(float value)
-    {
-        _opacity = value;
-        alpha = value;
-    }
+    public void setOpacity(float value) { _opacity = value; }
 }
