@@ -1,7 +1,6 @@
-package gabor.com.surfaceviewtweens.looper;
+package gabor.com.surfaceviewtweens.sprites;
 
 import android.graphics.Canvas;
-import android.graphics.Rect;
 
 /**
  * 

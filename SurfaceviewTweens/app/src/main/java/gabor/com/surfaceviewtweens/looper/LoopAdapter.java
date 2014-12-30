@@ -1,16 +1,19 @@
 package gabor.com.surfaceviewtweens.looper;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.graphics.Canvas;
+
+import java.util.ArrayList;
+
+import gabor.com.surfaceviewtweens.sprites.Triangle;
 
 public interface LoopAdapter {
 
-    public void update(long elapsedTime);
+    public boolean startAnimating();
     
-    public ArrayList<DrawableObject> getDrawableObjects();
+    public void stopAnimating();
     
-    public void drawBackground(Canvas canvas);
+    public ArrayList<Triangle> getDrawableObjects(); // where Triangle can be replaced by any DrawableObject
+    
+    public void drawForeground(Canvas canvas);
 
 }

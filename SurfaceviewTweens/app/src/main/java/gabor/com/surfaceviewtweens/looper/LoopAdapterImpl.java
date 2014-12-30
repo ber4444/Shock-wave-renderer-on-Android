@@ -1,12 +1,14 @@
 package gabor.com.surfaceviewtweens.looper;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Point;
-import android.util.DisplayMetrics;
+import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
-import java.util.List;
+
+import gabor.com.surfaceviewtweens.sprites.Circle;
 import gabor.com.surfaceviewtweens.sprites.Triangle;
 
 public class LoopAdapterImpl implements LoopAdapter {
@@ -15,49 +17,82 @@ public class LoopAdapterImpl implements LoopAdapter {
     private static double NUM; // helper for the animation effect
     public static float RADIUS;
     private static final int[][] LIGHT_AMOUNT = {{3, 2, 0, 1}, {3, 2, 0, 1}, {3, 2, 0, 1}, {3, 1, 0, 2}, {0, 1, 3, 2}};
-    private ArrayList<DrawableObject> _triangles;
+    private ArrayList<Triangle> triangles;
+    private Circle circle;
+    private AnimatorSet globalAnim;
 
     public LoopAdapterImpl(int x, int y) {
         width = x; height = y;
     }
 
-    public void update(long elapsedTime) {
+    public boolean startAnimating() {
+        
+        if (triangles == null || circle == null) 
+            setup();
 
-        for (Triangle t : _triangles) {
-            float dx = screenCenterX - t.x + t.getCenter().x;
-            float dy = screenCenterY - t.y + t.getCenter().y;
+        int i = 0;
+        ArrayList<AnimatorSet> triangleAnims = new ArrayList<>(triangles.size()*2);
+        if (triangleAnims.size() == 0)
+            return false;
+
+        for (Triangle t : triangles) {
+            float dx = screenCenterX - t.getX() + t.getCenter().x;
+            float dy = screenCenterY - t.getY() + t.getCenter().y;
             final double NUM2 = Math.sqrt(dx * dx + dy * dy);
             float d = (float) (NUM2 * 0.04 + Math.random() * 4.0);
             float ta = (float) ((4 - t.getType()) / 3 * 0.4 + Math.random() * 0.6);
             ta = ta * ta * 0.3f;
-            Tween.to(t, TriangleAccessor.ALPHA, 10f).delay(d).ease(Cubic.OUT).target(ta);
-            // and another one, after this tween completed:
-            Tween.to(t, TriangleAccessor.ALPHA, 10f).target(t.getOpacity()).
-                    delay((float)Math.random()*5f);
-            // this third one is started at the same time as the first one, but with a fixed delay
-            timeLine.pushPause(50f);
+            
+            ObjectAnimator anim = ObjectAnimator.ofFloat(t, "opacity", ta);
+            anim.setDuration(10);
+            anim.setStartDelay((long) d);
+            anim.setInterpolator(new LinearInterpolator());// TODO find TimeInterpolator (or implement a custom one) subclass equivalent for TweenMax's ease:Cubic.easeOut
+            ObjectAnimator anim2 = ObjectAnimator.ofFloat(t, "opacity", t.getOpacity());
+            anim.setDuration(10);
+            anim.setStartDelay((long)Math.random()*5);
+            triangleAnims.get(i++).play(anim).before(anim2);
+
             d = (float)(Math.abs(NUM - NUM2) * 0.05 + (Math.random()-0.5) * 5);
             ta = (float) ((4 - t.getType()) / 3 * 0.4 + Math.random() * 0.6);
             ta = ta*ta*0.3f;
-            Tween.to(t, TriangleAccessor.ALPHA, 10f).ease(Cubic.IN).target(ta).delay(d);
-            // and another one, after this tween completed:
-            Tween.to(t, TriangleAccessor.ALPHA, 10f).target(t.getOpacity()).
-                    delay((float)Math.random()*5f);
+            ObjectAnimator anim3 = ObjectAnimator.ofFloat(t, "opacity", ta); // TODO ease:Cubic.easeIn
+            anim3.setDuration(10);
+            anim3.setStartDelay((long) d);
+            ObjectAnimator anim4 = ObjectAnimator.ofFloat(t, "opacity", t.getOpacity()); 
+            anim4.setDuration(10);
+            anim4.setStartDelay((long)Math.random()*5);
+            triangleAnims.get(i).setStartDelay(50);
+            triangleAnims.get(i++).play(anim3).before(anim4);
         }
-/* Property animation:
-define duration (def. 300ms), interpolation, repeating or not, sets in parallel or sequential, refresh rate (def. 10ms)
-       ObjectAnimator         TypeInterpolator e.g. LinearInterpolator
-                               TypeEvaluator [how to calculate] e.g. IntEvaluator
- */
+        globalAnim = new AnimatorSet();
+        AnimatorSet first = triangleAnims.get(0);
+        for (AnimatorSet a : triangleAnims)
+            if (first != a)
+                globalAnim.play(first).with(a);
 
-        /*scaling:             circle.setRadius(x);
-        Tween.set(_circle, CircleAccessor.SCALE).target(RADIUS/8).delay(0f).start(tweenManager2);
-        Tween.to(_circle, CircleAccessor.SCALE, 50).delay(0.1f).target(RADIUS).start(tweenManager2);
-        Tween.to(_circle, CircleAccessor.SCALE, 60).delay(70f).ease(Cubic.OUT).target(0).start(tweenManager2);
-        */
+        ObjectAnimator anim = ObjectAnimator.ofFloat(circle, "radius", RADIUS);
+        anim.setDuration(50);
+        anim.setInterpolator(new LinearInterpolator());// TODO find TimeInterpolator (or implement a custom one) subclass equivalent for TweenMax's ease:Cubic.easeOut
+        ObjectAnimator anim2 = ObjectAnimator.ofFloat(circle, "radius", 0);
+        anim.setDuration(60);
+        anim.setStartDelay(70);
+        AnimatorSet circleAnim = new AnimatorSet();
+        circleAnim.play(anim).before(anim2);
+        globalAnim.play(first).with(circleAnim);
+
+        globalAnim.start();
+        
+        return true;
+    }
+    
+    public void stopAnimating() {
+        if (globalAnim != null)
+            globalAnim.cancel();
+        triangles = null;
+        circle = null;
     }
 
-    public ArrayList<DrawableObject> getDrawableObjects() {
+    private void setup() {
         screenCenterX = width/2; screenCenterY = height/2;
         RADIUS = width * 2f;
         NUM = Math.sqrt(screenCenterX * screenCenterX + screenCenterY * screenCenterY);
@@ -65,7 +100,7 @@ define duration (def. 300ms), interpolation, repeating or not, sets in parallel 
         triangleSize = (screenCenterX < 250) ? 44 : 50;
         int a = width / (2 * triangleSize) + triangleSize;
         int b = height / triangleSize + triangleSize;
-        _triangles = new ArrayList<>(a*b*4);
+        triangles = new ArrayList<>(a*b*4);
         for (int i = 0; i < a; i++) {
             for (int j = 0; j < b; j++) {
                 int rnd = (int)(Math.random() * LIGHT_AMOUNT.length);
@@ -84,16 +119,20 @@ define duration (def. 300ms), interpolation, repeating or not, sets in parallel 
                     double opacity = light + Math.random() * 0.15;//or 0.05
                     triangle.setOpacity((float)opacity);
 
-                    _triangles.add(triangle);
+                    triangles.add(triangle);
                 }
             }
         }
 
-        return _triangles; // TODO: new Circle(width, height);
+        circle = new Circle(width, height, RADIUS / 8f);
     }
 
-    public void drawBackground(Canvas canvas) {
-        canvas.drawColor(Color.BLACK);
+    public ArrayList<Triangle> getDrawableObjects() {
+        return triangles;
+    }
+
+    public void drawForeground(Canvas canvas) {
+        circle.draw(canvas);
     }
 
 }

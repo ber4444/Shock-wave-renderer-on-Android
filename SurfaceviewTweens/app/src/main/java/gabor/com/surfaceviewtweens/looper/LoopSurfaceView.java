@@ -1,13 +1,16 @@
 package gabor.com.surfaceviewtweens.looper;
 
-import java.util.List;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import java.util.List;
+
+import gabor.com.surfaceviewtweens.sprites.DrawableObject;
+import gabor.com.surfaceviewtweens.sprites.Triangle;
 
 public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -41,7 +44,7 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
         // TODO
     }
 
-    /** Start the update/draw loop. */
+    /** Start the draw loop. */
     public void play() {
 
         if (adapter == null)
@@ -49,9 +52,8 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
 
         // If the thread is running the surface view has been started before
         // and has never been stopped.
-        if (innerThread != null && innerThread.isRunning()) {
+        if (innerThread != null && innerThread.isRunning()) 
             throw new IllegalStateException("You can't call play() twice.");
-        }
 
         innerThread = new InnerThread();
         innerThread.start();
@@ -62,6 +64,7 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
     public void stop() {
         innerThread.cleanStop();
         innerThread = null;
+        surfaceCreated = false;
     }
 
     /** Set the adapter for this surface view. */
@@ -69,8 +72,7 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
         this.adapter = adapter;
     }
 
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    }
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 
     public void surfaceCreated(SurfaceHolder holder) {
         if (!surfaceCreated) {
@@ -81,7 +83,6 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
 
     public void surfaceDestroyed(SurfaceHolder holder) {
         stop();
-        surfaceCreated = false;
     }
 
     private class InnerThread extends Thread {
@@ -90,33 +91,37 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
 
         @Override
         public void run() {
+            
+            Canvas canvas;
+            if (! adapter.startAnimating()) {
+                Log.e(TAG, "Out of memory");
+                run = false;
+            }
+            
             while (run) {
-
-                Canvas canvas = null;
-
+                canvas = null;
                 try {
                     canvas = getHolder().lockCanvas();
-                    if (canvas != null) { // don't we need synchronized (getHolder()) here ?
-                        adapter.update(0);
-                        adapter.drawBackground(canvas);
-                        renderObjects(adapter.getDrawableObjects(), canvas);
+                    if (canvas != null) {                       
+                        renderTriangles(adapter.getDrawableObjects(), canvas);
+                        adapter.drawForeground(canvas);
                     }
-                    Thread.sleep(500);//or 10
+                    Thread.sleep(10);//FIXME not sure about this... trying to adjust to a reasonable frame rate
                 } catch (InterruptedException e) {
                     Log.e(TAG, "Interrupted while sleeping.", e);
 
                 } finally {
-                    if (canvas != null) {
+                    if (canvas != null)
                         getHolder().unlockCanvasAndPost(canvas);
-                    }
                 }
             }
+            
+            adapter.stopAnimating();
         }
 
-        private void renderObjects(List<DrawableObject> drawableObjects, Canvas canvas) {
-            for (DrawableObject drawableObject : drawableObjects) {
+        private void renderTriangles(List<Triangle> drawableObjects, Canvas canvas) {
+            for (DrawableObject drawableObject : drawableObjects)
                 drawableObject.draw(canvas);
-            }
         }
 
         public boolean isRunning() {

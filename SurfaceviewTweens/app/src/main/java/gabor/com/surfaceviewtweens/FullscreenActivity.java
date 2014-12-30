@@ -1,9 +1,5 @@
 package gabor.com.surfaceviewtweens;
 
-import gabor.com.surfaceviewtweens.looper.LoopAdapterImpl;
-import gabor.com.surfaceviewtweens.looper.LoopSurfaceView;
-import gabor.com.surfaceviewtweens.util.SystemUiHider;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.os.Build;
@@ -12,6 +8,10 @@ import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
+
+import gabor.com.surfaceviewtweens.looper.LoopAdapterImpl;
+import gabor.com.surfaceviewtweens.looper.LoopSurfaceView;
+import gabor.com.surfaceviewtweens.util.SystemUiHider;
 
 
 /**
