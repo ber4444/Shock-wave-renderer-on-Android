@@ -3,7 +3,6 @@ package gabor.com.surfaceviewtweens.looper;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -14,13 +13,8 @@ import gabor.com.surfaceviewtweens.sprites.Triangle;
 
 public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-    private static final String TAG = LoopSurfaceView.class.getSimpleName();
-
     private InnerThread innerThread;
-
     private LoopAdapter adapter;
-
-    public boolean surfaceCreated = false;
 
     public LoopSurfaceView(Context context) {
         super(context);
@@ -50,21 +44,22 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
         if (adapter == null)
             throw new IllegalArgumentException("Can't run without adapter.");
 
-        // If the thread is running the surface view has been started before
-        // and has never been stopped.
-        if (innerThread != null && innerThread.isRunning()) 
-            throw new IllegalStateException("You can't call play() twice.");
+        if (innerThread != null && innerThread.isRunning())
+            return; //You can't call play() twice.
 
-        innerThread = new InnerThread();
+        if (innerThread == null)
+            innerThread = new InnerThread();
+
+        adapter.startAnimating();
         innerThread.start();
-
     }
 
     /** Stop the loop. You can start it again with play(). */
     public void stop() {
-        innerThread.cleanStop();
+        if (innerThread != null && innerThread.isRunning())
+            innerThread.cleanStop();
         innerThread = null;
-        surfaceCreated = false;
+        adapter.stopAnimating();
     }
 
     /** Set the adapter for this surface view. */
@@ -74,12 +69,7 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 
-    public void surfaceCreated(SurfaceHolder holder) {
-        if (!surfaceCreated) {
-            play();
-            surfaceCreated = true;
-        }
-    }
+    public void surfaceCreated(SurfaceHolder holder) {}
 
     public void surfaceDestroyed(SurfaceHolder holder) {
         stop();
@@ -91,32 +81,17 @@ public final class LoopSurfaceView extends SurfaceView implements SurfaceHolder.
 
         @Override
         public void run() {
-            
             Canvas canvas;
-            if (! adapter.startAnimating()) {
-                Log.e(TAG, "Out of memory");
-                run = false;
-            }
-            
-            while (run) {
-                canvas = null;
-                try {
-                    canvas = getHolder().lockCanvas();
-                    if (canvas != null) {                       
-                        renderTriangles(adapter.getDrawableObjects(), canvas);
-                        adapter.drawForeground(canvas);
-                    }
-                    Thread.sleep(10);//FIXME not sure about this... trying to adjust to a reasonable frame rate
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Interrupted while sleeping.", e);
 
-                } finally {
-                    if (canvas != null)
-                        getHolder().unlockCanvasAndPost(canvas);
+            while (run) {
+                canvas = getHolder().lockCanvas();
+                if (canvas != null && adapter != null) {
+                    renderTriangles(adapter.getDrawableObjects(), canvas);
+                    adapter.drawForeground(canvas);
                 }
+                if (canvas != null)
+                    getHolder().unlockCanvasAndPost(canvas);
             }
-            
-            adapter.stopAnimating();
         }
 
         private void renderTriangles(List<Triangle> drawableObjects, Canvas canvas) {

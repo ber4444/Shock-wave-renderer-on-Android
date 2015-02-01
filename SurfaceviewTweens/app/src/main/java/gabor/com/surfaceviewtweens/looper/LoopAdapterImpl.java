@@ -4,7 +4,9 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.graphics.Canvas;
 import android.graphics.Point;
-import android.view.animation.LinearInterpolator;
+import android.util.DisplayMetrics;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
 
 import java.util.ArrayList;
 
@@ -19,22 +21,27 @@ public class LoopAdapterImpl implements LoopAdapter {
     private static final int[][] LIGHT_AMOUNT = {{3, 2, 0, 1}, {3, 2, 0, 1}, {3, 2, 0, 1}, {3, 1, 0, 2}, {0, 1, 3, 2}};
     private ArrayList<Triangle> triangles;
     private Circle circle;
-    private AnimatorSet globalAnim;
 
-    public LoopAdapterImpl(int x, int y) {
-        width = x; height = y;
+    public LoopAdapterImpl(DisplayMetrics dm) {
+        width = dm.widthPixels; height = dm.heightPixels;
+        triangleSize = Math.round(10 * (dm.xdpi / DisplayMetrics.DENSITY_DEFAULT));
     }
 
-    public boolean startAnimating() {
+    public void startAnimating() {
         
         if (triangles == null || circle == null) 
             setup();
 
-        int i = 0;
-        ArrayList<AnimatorSet> triangleAnims = new ArrayList<>(triangles.size()*2);
-        if (triangleAnims.size() == 0)
-            return false;
-
+        ObjectAnimator anim0 = ObjectAnimator.ofFloat(circle, "radius", RADIUS);
+        anim0.setDuration(5000);
+        ObjectAnimator anim02 = ObjectAnimator.ofFloat(circle, "radius", 0);
+        anim02.setDuration(6000);
+        anim02.setStartDelay(7000);
+        anim02.setInterpolator(new AccelerateDecelerateInterpolator());
+        AnimatorSet circleAnim = new AnimatorSet();
+        circleAnim.play(anim0).before(anim02);
+        circleAnim.start();
+        
         for (Triangle t : triangles) {
             float dx = screenCenterX - t.getX() + t.getCenter().x;
             float dy = screenCenterY - t.getY() + t.getCenter().y;
@@ -44,50 +51,36 @@ public class LoopAdapterImpl implements LoopAdapter {
             ta = ta * ta * 0.3f;
             
             ObjectAnimator anim = ObjectAnimator.ofFloat(t, "opacity", ta);
-            anim.setDuration(10);
-            anim.setStartDelay((long) d);
-            anim.setInterpolator(new LinearInterpolator());// TODO find TimeInterpolator (or implement a custom one) subclass equivalent for TweenMax's ease:Cubic.easeOut
+            anim.setDuration(1000);
+            anim.setStartDelay((long)(d*100));
+            anim.setInterpolator(new AccelerateDecelerateInterpolator());
             ObjectAnimator anim2 = ObjectAnimator.ofFloat(t, "opacity", t.getOpacity());
-            anim.setDuration(10);
-            anim.setStartDelay((long)Math.random()*5);
-            triangleAnims.get(i++).play(anim).before(anim2);
+            anim2.setDuration(1000);
+            anim2.setStartDelay((long)(Math.random()*500));
+            AnimatorSet set1 = new AnimatorSet();
+            set1.play(anim).before(anim2);
 
             d = (float)(Math.abs(NUM - NUM2) * 0.05 + (Math.random()-0.5) * 5);
             ta = (float) ((4 - t.getType()) / 3 * 0.4 + Math.random() * 0.6);
             ta = ta*ta*0.3f;
-            ObjectAnimator anim3 = ObjectAnimator.ofFloat(t, "opacity", ta); // TODO ease:Cubic.easeIn
-            anim3.setDuration(10);
-            anim3.setStartDelay((long) d);
+            ObjectAnimator anim3 = ObjectAnimator.ofFloat(t, "opacity", ta); 
+            anim3.setDuration(1000);
+            anim3.setStartDelay((long)(d*100));
+            anim3.setInterpolator(new AccelerateInterpolator());
             ObjectAnimator anim4 = ObjectAnimator.ofFloat(t, "opacity", t.getOpacity()); 
-            anim4.setDuration(10);
-            anim4.setStartDelay((long)Math.random()*5);
-            triangleAnims.get(i).setStartDelay(50);
-            triangleAnims.get(i++).play(anim3).before(anim4);
+            anim4.setDuration(1000);
+            anim4.setStartDelay((long)(Math.random()*500));
+            AnimatorSet set2 = new AnimatorSet();
+            set2.setStartDelay(5000);
+            set2.play(anim3).before(anim4);
+
+            set1.start();
+            set2.start();
         }
-        globalAnim = new AnimatorSet();
-        AnimatorSet first = triangleAnims.get(0);
-        for (AnimatorSet a : triangleAnims)
-            if (first != a)
-                globalAnim.play(first).with(a);
-
-        ObjectAnimator anim = ObjectAnimator.ofFloat(circle, "radius", RADIUS);
-        anim.setDuration(50);
-        anim.setInterpolator(new LinearInterpolator());// TODO find TimeInterpolator (or implement a custom one) subclass equivalent for TweenMax's ease:Cubic.easeOut
-        ObjectAnimator anim2 = ObjectAnimator.ofFloat(circle, "radius", 0);
-        anim.setDuration(60);
-        anim.setStartDelay(70);
-        AnimatorSet circleAnim = new AnimatorSet();
-        circleAnim.play(anim).before(anim2);
-        globalAnim.play(first).with(circleAnim);
-
-        globalAnim.start();
-        
-        return true;
     }
     
     public void stopAnimating() {
-        if (globalAnim != null)
-            globalAnim.cancel();
+        // TODO stop animations
         triangles = null;
         circle = null;
     }
@@ -97,10 +90,9 @@ public class LoopAdapterImpl implements LoopAdapter {
         RADIUS = width * 2f;
         NUM = Math.sqrt(screenCenterX * screenCenterX + screenCenterY * screenCenterY);
 
-        triangleSize = (screenCenterX < 250) ? 44 : 50;
-        int a = width / (2 * triangleSize) + triangleSize;
-        int b = height / triangleSize + triangleSize;
-        triangles = new ArrayList<>(a*b*4);
+        int a = width / (2*triangleSize);
+        int b = height / triangleSize;
+        triangles = new ArrayList<>();
         for (int i = 0; i < a; i++) {
             for (int j = 0; j < b; j++) {
                 int rnd = (int)(Math.random() * LIGHT_AMOUNT.length);
@@ -116,7 +108,7 @@ public class LoopAdapterImpl implements LoopAdapter {
                     Triangle triangle = new Triangle(k, triangleSize, center.x, center.y);
 
                     double light = LIGHT_AMOUNT[rnd][k] * s * 0.03;
-                    double opacity = light + Math.random() * 0.15;//or 0.05
+                    double opacity = light + Math.random() * 0.05;
                     triangle.setOpacity((float)opacity);
 
                     triangles.add(triangle);

@@ -8,7 +8,7 @@ import gabor.com.surfaceviewtweens.sprites.Triangle;
 
 public interface LoopAdapter {
 
-    public boolean startAnimating();
+    public void startAnimating();
     
     public void stopAnimating();
     
